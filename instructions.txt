@@ -1,0 +1,2 @@
+1. Have python, pytorch, matlplotlib, pandas, numpy, tensorflow installed
+2. run the project.ipynb file in jupyter notebook/google collab

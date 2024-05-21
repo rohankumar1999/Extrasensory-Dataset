@@ -163,7 +163,7 @@ Features that are highly correlated are deduplicated to prevent redundancy and m
 # <a name="_rt89k582ptu"></a>
 # <a name="_cx0643ph45gu"></a>Ⅳ. Model Development
 1. ## <a name="_q437n3hjzxg8"></a>Model Selection:
-Different machine learning models are explored and compared. I implemented several models, including Logistic Regression, Random Forest, Support Vector Machines (SVM), as well as deep learning models such as RNN (Recurrent Neural Network) and LSTM (Long Short-Term Memory). Each of these models has its strengths and weaknesses, and they are suitable for different types of data and tasks.
+Different machine learning models are explored and compared. I implemented several models, including Decision Tree Classifier, Random Forest, Support Vector Machines (SVM), as well as deep learning models such as RNN (Recurrent Neural Network) and LSTM (Long Short-Term Memory). Each of these models has its strengths and weaknesses, and they are suitable for different types of data and tasks.
 
 1. ## <a name="_eq8bbh3qkh75"></a>Cross-Validation:
 To evaluate model performance robustly, I implement cross-validation using TimeSeriesSplit. Cross-validation is essential for assessing how well a model generalizes to new data and helps in detecting overfitting. By splitting the data into multiple folds and training the model on different subsets while testing on others, cross-validation provides a more accurate estimate of the model's performance.
