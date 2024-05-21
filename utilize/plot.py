@@ -1,16 +1,17 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-def plot_metric(models, values, metric_name):
+def plot_metric(metrics, title_name):
+    fig, axs = plt.subplots(len(metrics.keys()), 1, figsize=(5, 12))
 
-    # Create the bar graph
-    plt.figure(figsize=(10, 6))
-    plt.bar(models, values, color='skyblue')
+    for i, (metric, model_scores_dict) in enumerate(metrics.items()):
+        models = model_scores_dict.keys()
+        scores = model_scores_dict.values()
+        axs[i].bar(models, scores, color='skyblue')
+        axs[i].set_title(metric)
 
-    # Add title and labels
-    plt.title(metric_name)
-    plt.xlabel('Model')
-    plt.ylabel('Values')
-
-    # Show the plot
+    # Adjust layout to prevent overlap
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    fig.suptitle(title_name, fontsize=16)
+    # Display the combined plot
     plt.show()

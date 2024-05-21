@@ -1,83 +1,236 @@
-# Explore the Deep Learning Models with Extrasensory Dataset
-[The ExtraSensory Dataset](http://extrasensory.ucsd.edu/)  
+Human Activity Recognition and Context Prediction using the
 
-From this data set, our plan is to explore feature selection method among all provided features (225 features), and different methods including MLP(Multi Layer Perceptron), RNN(Recurrent Neural Network) and Classic Machine Learning method(Random Forest) to get better performance in classifying multi-label.
+Extrasensory Dataset
 
-## 1. INTRODUCTION  
-This data consists of sensory data and labels and it was collected from 60 participants for approximately 7 days. For each user, it has thousands of instances, typically taken in intervals of 1 minute. Every instance contains measurements from sensors from the user’s personal smartphone, eg. accelerometer, magnetometer, location, and phone-state, as well as an accelerometer and
-compass from an additional smartwatch that the data collector provided.  
 
-Based on this model, we tried to modify the construction of the hidden layers, the loss function, hyper-parameters, and additing regularization layers to further improve the model.
 
-## 2. FEATURE SELECTION  
-Extrasensory dataset has features extracted from ten types of sensors. Except for phone state sensors which have discrete categories
-such as battery state and WiFi availability and the categories have different sources of data, other sensors have many extracted features coming from the same source of time-sequential raw data.  
 
-Taking accelerator as an example, it has 26 features extracted from its raw data and these features may be highly related because of
-the homology of the features. Such a high correlation turns out to be very common among all 225 feature pairs, which leads to the necessity of feature learning.  
 
-![Figure 1](https://github.com/xxuan02/ExtraSensory/blob/master/Image/%E5%9B%BE%E7%89%871.png)  
-Figure 1: Correlation heatmap of 75 features from Acc sensors. The zoomed image is a detailed map of the first six features. The number in each entry represents the correlation
-coefficient. 
 
-We used Sequential Forward Selection and Auto-encoder Feature Selection to select features. 
 
-### 2.1 Sequential Forward Selection  
-First, we try a classical wrapping method of feature selection (SFS): sequential forward selection. The wrapping method selects the features by the score of an evaluation algorithm. Here we use the multi-layer perceptron (MLP) model as the evaluation algorithm and use the balanced accuracy to score the performance of the model on the validation set.
-* Balanced Accuarcy = (sensitivity+selectivity) / 2  
 
-### 2.2 Auto-encoder Feature Selection  
-![Figure 2](https://github.com/xxuan02/ExtraSensory/blob/master/Image/auto.png)  
-Figure 2: A diagram of auto-encoder network structure  
 
-SFS is a wrapper based method involving evaluation algorithms, which is quite time-consuming and requires labeled data. As we mentioned before, the 51 context labels involve large portions of unlabeled data and the classes in a label are very unbalanced. These all lead to a poor reliability of selecting the features by the evaluation algorithm. Unsupervised feature selection methods can be more essential in this case. Here we introduce a more efficient unsupervised feature selection method using an auto-encoder network for selecting features with high representability. Figure 2 shows a diagram of such an auto-encoder network.  
 
-![Figure 3](https://github.com/xxuan02/ExtraSensory/blob/master/Image/%E5%9B%BE%E7%89%877.png)  
-Figure 3: Comparison between auto-encoder feature selection and SFS and random selection.
-![Figure 4](https://github.com/xxuan02/ExtraSensory/blob/master/Image/%E5%9B%BE%E7%89%874.png)  
-Figure 4: Distribution of features scores  
 
-We trained the network with all the training data and plotted the distribution of scores of features in Figure 4. The distribution shows that a plenty of features have scores close to zero indicating that they can be represented by other features. The algorithm selects features by scores from high to low ranks. Figure 3 compares the evaluation score of auto-encoder selections using MLP model with SFS and random selections. Auto-encoder selections performs similarly to random selection and overwhelm a little bit when more than 80 features are selected.  
 
-Auto-encoder feature selector is much faster compared to the wrapped methods like SFS with an acceptable performance. So in general, auto-encoder feature selector is definitely an algorithm that deserves to try in this classification problem.  
 
-## 3. COMPARISON OF METHODS
-### 3.1 Random Forest Model  
-The random forest model is built to set a baseline and therefore compare the result with using neural networks.At the beginning of the modeling process, we only tried to output the six core labels, and it turns out a model with maximum depth of three gives a high accuracy to predict six labels. Then, the prediction extends to all 51 labels, which also includes more instances that have many missing
-labels. To deal with such cases, the sample weight is calculated according to the portion of missing labels. At the same time, to deal with the problem of unbalanced classes, we added additional parameters in the model to set it as ‘balanced’. When evaluating the model, we used balanced accuracy as mentioned in the introduction and ignore the missing labels for the calculations.  
+CS256 Project Report
 
-![Figure 5](https://github.com/xxuan02/ExtraSensory/blob/master/Image/%E5%9B%BE%E7%89%878.png)  
-Figure 5: Random Forest result shows the effectiveness of sample weight (weighted) and balanced class (balanced).  
 
-To see if we really need to use sample weight and balanced class, and also what the depth of the final tree we want, we plot the “Max
-Depth vs. Balanced Accuracy” (Figure 5) with all different cases. As the figure shows, either including the balancing parameter to adding the weight will give us much improvement on the performance of the model. As the graph also shows, the random forest model
-performs the best when the maximum depth of the result tree is set to be either 21 or 22. When the depth increases furthermore,
-the performance on the test set of predicting is even worse due to over-fitting.  
 
-### 3.2 MLP model  
-In order to get the best result, we explore three different regularization methods. 1) drop out 2) batch normalization 3) Frobenius
-norm on loss function. We add variables to change drop out rate (0 or 0.15), state of batch normalization (On or Off) and regularization
-parameter alpha(0 or 0.1 or 0.001) which is related to the Frobenius norm.  
-We compared the effect of batch normalization while fixing drop out and alpha as 0, through various numbers of nodes (Figure 6).  
-![Figure 6](https://github.com/xxuan02/ExtraSensory/blob/master/Image/%E5%9B%BE%E7%89%879.png)  
-Figure 6: Compare batch normalization ’on’ and ’off’ in terms of different hidden layer size.  
 
-In conclusion, among those three, batch normalization showed the biggest improvement by preventing overfitting considering that
-we got best Balanced accuracy = 0.895510, with batch normalization =’On’, [256,256]nodes. However, the drop out method and Frobenius norm(regularization parameter) on loss function didn’t show significant improvement compared to batch normalization.
-### 3.3 RNN Model  
-In the previous paragraph we have introduced the MLP model, but the functions that MLP can achieve are still quite limited. For this Extrasensory data set, the labels have a complex temporal correlation with each other, and the length is various. This relationship is not concerned by MLP. The key point in RNN is that the hidden state of the current network will retain the previous input information
-and be used as the output of the current network. We built a simple RNN model to see if there any improvement of performance compared to other models. Similarly by using the instance-weighting matrix, we can ignore the effect of missing labels during training. To implement a basic model in comparison, we added a dense layer, which is the regular deeply connected neural network layer and the most common and frequently used layer, set the activation functionas “sigmoid” together with a 0.2 dropout rate. From this model we got a balanced accuracy around 0.68 from the selected 175 features.  
 
-![Figure 7](https://github.com/xxuan02/ExtraSensory/blob/master/Image/LSTM%20(2).png)  
-Figure 7: Comparing simple MLP model to RNN with LSTM model  
 
-In addition to the basic model, we extended it to RNN models with the Long Short Term Memory networks, known as “LSTMs”. Since LSTM has the ability to avoid long-term dependency problems, it might provide a better memory structure for processing the 175 input features. We inserted a LSTM layer into our basic RNN model while keeping all the other hyper-parameters unchanged to see if it can help us to improve our model performance. As a result, the balanced accuracy is higher from the beginning and reaches to about 0.71 with the LSTM layer. We should pay more attention to the training part in the future work in order to get a more accurate and saturate BA.
 
-## 4. CONCLUSIONS  
-This project is based on in-the-wild dataset, all the data was collected from users’ regular natural behavior, which means the dataset
-has a large scale as well as a rich variability and flexibility. So feature selection occupied a large proportion in our project. After applying sequential forward selection and auto-encoder to the data, we found that balanced accuracy almost saturated when we selected
-around 80 features. However, selecting more features doesn’t hurt the performance of MLP models.  
 
-Training deep neural networks is complicated by the fact that the distribution of each layer’s inputs changes during training, as the
-parameters of the previous layers change. To solve this problem, we used different parameters and regularizations and found that batch normalization works the best, which also helps to reduce overfitting. We proposed our best MLP model with hyper-parameters of
-regularization parameter alpha = 0.0, epoch = 40 and learning rate = 0.0001 with two hidden layers that each has 256 hidden units and two batch normalization layers.
+
+
+
+
+
+
+
+
+
+
+By
+
+Naga Rohan Kumar Bayya
+
+016980275
+## <a name="_2dkltvik5rk2"></a>Contents
+[**Contents	2**](#_2dkltvik5rk2)**
+
+[**Ⅰ. Problem Statement	3**](#_ty3er9ml7fui)
+
+[**Ⅱ. Research Objectives and Goals	4**](#_f44pfqo267kj)
+
+[**Ⅲ. History and Background	6**](#_t9k50ncl282w)
+
+[**Ⅳ. Technical Approach	7**](#_cx0643ph45gu)
+
+[**Ⅴ. Requirements	8**](#_te36p54h7s7j)
+
+[**Ⅵ. Timeline	9**](#_zdm2lhag6kmz)
+
+[**Ⅶ. References	10**](#_48k2wxr3rzvx)
+
+
+
+
+# <a name="_ty3er9ml7fui"></a>Ⅰ. Dataset Overview
+
+The ExtraSensory dataset is a rich resource for behavioral context recognition in-the-wild, collected from mobile sensors including smartphones (iPhone/Android) and smartwatches. Here's a detailed exploration of its structure:
+
+1. ## <a name="_kgy1hq6kcmou"></a>Data Collection Process:
+   Data was collected through the ExtraSensory mobile application, which performed a 20-second recording session automatically every minute. The application collected measurements from various sensors including accelerometer, gyroscope, magnetometer, location services, audio, watch accelerometer, watch compass, phone state indicators, and additional sensors like light, air pressure, humidity, and temperature. The sensors provided measurements at different frequencies and durations, with some sampled once a minute and others sampled at higher frequencies (e.g., 40Hz for accelerometer, gyroscope, and magnetometer).
+
+
+1. ## <a name="_afk1efgtnkl9"></a>Users and Devices:
+   The dataset includes data from 60 users, mainly students and research assistants from the UCSD campus, with diverse ethnic backgrounds. Users had a variety of phone devices, including different iPhone generations (4, 4S, 5, 5S, 5C, 6, and 6S) and Android devices from various manufacturers. There were differences in sensor availability among devices, with some sensors not present in certain phones (e.g., iPhones lacking an air pressure sensor).
+1. ## <a name="_btd7yfmdvl9f"></a>Sensors
+   The dataset comprises measurements from heterogeneous sensors, including motion-reactive sensors (accelerometer, gyroscope, magnetometer), location services, audio, watch accelerometer, watch compass, and additional sensors. Sensor measurements were recorded at different frequencies and provided diverse types of data, such as tri-axial direction and magnitude of acceleration, rotation rates, magnetic field information, audio features, and location coordinates.
+
+
+
+1. ## <a name="_q1dcbzrufi0r"></a>Activities/Context Labels:
+   The dataset includes both cleaned labels and original self-reported labels from users.
+
+   Cleaned labels consist of context labels derived from user self-reports, covering a wide range of activities and contexts (e.g., indoors, sitting, walking, sleeping, computer work).
+
+   Original labels include main activities (e.g., lying down, sitting, standing) and secondary activities (e.g., sports, transportation, basic needs, company, location).
+
+   Some challenges with labels include class imbalance, missing values, and the need for cleaning and processing to ensure reliability.
+
+1. ## <a name="_wblwjjgjcr2h"></a>Challenges:
+
+- Class Imbalance: The dataset exhibits class imbalance, with some activities having significantly more examples than others, which can affect the performance of machine learning models.
+- Missing Values: Due to various reasons such as sensor unavailability or user behavior, some examples may have missing sensor measurements or context labels, requiring strategies for handling missing data during analysis.
+- Diverse Data Modalities: The dataset contains data from diverse sensor modalities, each with its own data format and characteristics, posing challenges for feature extraction, fusion, and model development.
+- Handling data from different sensors, each providing different types of information (e.g., motion, location, audio), requires careful consideration of feature engineering and model architecture.
+
+
+
+
+
+# <a name="_f44pfqo267kj"></a>Ⅱ. Data Preprocessing
+
+In the data preprocessing phase, I addressed several key aspects to ensure the quality and usability of our dataset. Firstly, I tackled the issue of missing values. Identifying missing values was crucial, so I meticulously examined our dataset to locate any instances of missing data. Once identified, I employed various imputation techniques to fill in these missing values, ensuring that our dataset remained as complete as possible. Additionally, I implemented advanced techniques to handle missing values in cases where simple imputation was not feasible. Throughout this process, I also flagged missing values to keep track of the changes made to the dataset.
+
+Next, I focused on reducing noise in our data. Noise reduction was essential to improve the accuracy of our analysis. I applied various smoothing techniques and frequency filtering methods to minimize noise interference in our dataset. Additionally, I developed outlier detection algorithms to identify and eliminate noisy data points that could skew our results.
+
+Normalization was another critical step in our data preprocessing pipeline. I employed normalization techniques to scale our data and bring it within a standardized range. This ensured that features with different scales did not disproportionately influence our analysis. Techniques such as min-max scaling, standardization, and robust scaling were applied to achieve this normalization.
+
+In terms of data segmentation strategies, I devised methods to segment our time-series data effectively. I implemented fixed-length segments to divide our data into consistent intervals, facilitating analysis across different time periods. Additionally, I incorporated overlap between segments to ensure continuity and capture nuanced changes in the data. Determining segmentation criteria and applying window functions were crucial steps in this process, allowing us to extract relevant features from each segment accurately.
+
+
+# <a name="_t9k50ncl282w"></a>Ⅲ. Feature Engineering
+
+Time-domain features are directly extracted from the time-series sensor data. These features capture the characteristics of the data over time. The time-domain columns present in the dataset include:
+
+1. raw\_acc:magnitude\_stats:mean
+1. raw\_acc:magnitude\_stats:std
+1. raw\_acc:3d:mean\_x
+1. raw\_acc:3d:mean\_y
+1. raw\_acc:3d:mean\_z
+1. raw\_acc:3d:std\_x
+1. raw\_acc:3d:std\_y
+1. raw\_acc:3d:std\_z
+1. watch\_acceleration:magnitude\_stats:mean
+1. watch\_acceleration:magnitude\_stats:std
+1. watch\_acceleration:3d:mean\_x
+1. watch\_acceleration:3d:mean\_y
+1. watch\_acceleration:3d:mean\_z
+1. watch\_acceleration:3d:std\_x
+1. watch\_acceleration:3d:std\_y
+1. watch\_acceleration:3d:std\_z
+1. proc\_gyro:magnitude\_stats:mean
+1. proc\_gyro:magnitude\_stats:std
+1. proc\_gyro:3d:mean\_x
+1. proc\_gyro:3d:mean\_y
+1. proc\_gyro:3d:mean\_z
+1. proc\_gyro:3d:std\_x
+1. proc\_gyro:3d:std\_y
+1. proc\_gyro:3d:std\_z
+1. raw\_magnet:magnitude\_stats:mean
+1. raw\_magnet:magnitude\_stats:std
+
+
+
+Frequency-domain features capture the periodic patterns and frequency components of the data. The frequency-domain columns present in the dataset include:
+
+raw\_acc:magnitude\_spectrum:log\_energy\_band0
+
+1. raw\_acc:magnitude\_spectrum:log\_energy\_band4
+1. raw\_acc:magnitude\_spectrum:spectral\_entropy
+1. proc\_gyro:magnitude\_spectrum:log\_energy\_band0
+1. proc\_gyro:magnitude\_spectrum:log\_energy\_band4
+1. proc\_gyro:magnitude\_spectrum:spectral\_entropy
+1. raw\_magnet:magnitude\_spectrum:log\_energy\_band0
+1. raw\_magnet:magnitude\_spectrum:log\_energy\_band4
+1. raw\_magnet:magnitude\_spectrum:spectral\_entropy
+1. watch\_acceleration:magnitude\_spectrum:log\_energy\_band0
+1. watch\_acceleration:magnitude\_spectrum:log\_energy\_band4
+1. watch\_acceleration:magnitude\_spectrum:spectral\_entropy
+1. watch\_acceleration:spectrum:x\_log\_energy\_band0
+<a name="_4i3r66keplo2"></a>
+Dimensionality Reduction using Correlation Analysis:
+----------------------------------------------------
+Features that are highly correlated are deduplicated to prevent redundancy and multicollinearity, which can negatively impact the performance of machine learning models.
+
+
+
+# <a name="_rt89k582ptu"></a>
+# <a name="_cx0643ph45gu"></a>Ⅳ. Model Development
+1. ## <a name="_q437n3hjzxg8"></a>Model Selection:
+Different machine learning models are explored and compared. I implemented several models, including Logistic Regression, Random Forest, Support Vector Machines (SVM), as well as deep learning models such as RNN (Recurrent Neural Network) and LSTM (Long Short-Term Memory). Each of these models has its strengths and weaknesses, and they are suitable for different types of data and tasks.
+
+1. ## <a name="_eq8bbh3qkh75"></a>Cross-Validation:
+To evaluate model performance robustly, I implement cross-validation using TimeSeriesSplit. Cross-validation is essential for assessing how well a model generalizes to new data and helps in detecting overfitting. By splitting the data into multiple folds and training the model on different subsets while testing on others, cross-validation provides a more accurate estimate of the model's performance.
+
+1. ## <a name="_8dv3w3xd8yc"></a>Model Evaluation Metrics:
+I evaluated each model's performance using common metrics such as accuracy, precision, recall, and F1-score. These metrics provide insights into different aspects of model performance, such as the proportion of correctly classified instances (accuracy), the ability to correctly identify positive cases (recall), and the balance between precision and recall (F1-score).
+
+
+
+
+
+
+# <a name="_te36p54h7s7j"></a>Ⅴ. Advanced Model Exploration
+
+Advanced model exploration is conducted through the use of sequence models like LSTM to improve prediction accuracy.
+
+1. Sequence Models (LSTM):
+- The code defines a function run\_lstm\_model specifically for running an LSTM model.
+- Inside this function, a Sequential model is created using Keras (from TensorFlow). An LSTM layer is added to the model to capture temporal dependencies in the activities.
+- The model is compiled with appropriate loss function, optimizer, and metrics.
+- During training, the model is fit to the data and trained for a certain number of epochs. Early stopping is used to prevent overfitting.
+- The model's performance is evaluated using evaluation metrics such as accuracy, precision, recall, and F1-score.
+
+
+# <a name="_zdm2lhag6kmz"></a>Ⅵ. Evaluation
+
+Evaluation is performed using a series of metrics including accuracy, precision, recall, and F1-score.
+
+Evaluation is performed using a series of metrics including accuracy, precision, recall, and F1-score. Let's break down how evaluation is done and discuss the performance of different models and feature sets:
+
+## <a name="_pac3v29sgh03"></a>1. Model Evaluation Function:
+Evaluation is done using a function called `evaluate\_model`, which calculates the accuracy, precision, recall, and F1-score for a given model and test data. This function likely compares the model's predictions with the actual labels and computes these metrics based on the results.
+
+## <a name="_j2qbmuzaibmj"></a>2. Cross Validation: 
+Cross-validation is employed using TimeSeriesSplit. This method splits the dataset into multiple folds while preserving the temporal order of the data. Each fold is used as a test set once while the rest are used for training. This ensures that the model is evaluated on unseen data.
+
+## <a name="_njtamrv42479"></a>3. Model Performance: 
+Different models, including Random Forest, SVM, RNN, and LSTM, are trained and evaluated using the cross-validation approach. For each model and feature set, the average accuracy, precision, recall, and F1-score are calculated across the cross-validation folds.
+
+## <a name="_xk30plewp7hk"></a>4. Model Comparison: 
+After evaluating each model using cross-validation, the performance metrics (accuracy, precision, recall, and F1-score) are aggregated and plotted for comparison. This allows for a visual comparison of how different models perform on the given task and which feature sets lead to better performance.
+
+## <a name="_221yc117gwwc"></a>5. Discussion of Performance: 
+
+The performance of different models and feature sets can be discussed based on the aggregated metrics. For example:
+
+`   `- A model with higher accuracy indicates better overall performance in classifying activities.
+
+`   `- Precision measures the ratio of correctly predicted positive observations to the total predicted positives, which is important if false positives are costly.
+
+`   `- Recall measures the ratio of correctly predicted positive observations to the all observations in actual class, which is important if false negatives are costly.
+
+`   `- F1-score is the harmonic mean of precision and recall, providing a balance between the two metrics.
+
+`   `- By comparing these metrics across different models and feature sets, one can identify which combination yields the best performance for the given task.
+
+
+
+# <a name="_48k2wxr3rzvx"></a>Ⅶ. Conclusion
+
+In conclusion, the analysis of the provided dataset suggests that LSTM outperformed RNN in terms of classification performance. This observation can be attributed to LSTM's ability to retain and utilize information from previous time steps more effectively compared to traditional RNN architectures. The superior performance of LSTM highlights the importance of memory retention in capturing temporal dependencies within the data.
+
+Moreover, machine learning models such as SVM and random forest classifiers also exhibited good performance in the classification task. This suggests that while deep learning models like LSTM offer advantages in handling sequential data, traditional machine learning approaches remain competitive and effective for certain tasks.
+
+Potential improvements and future research directions for the ExtraSensory dataset include exploring advanced sensor fusion techniques, multimodal learning approaches, temporal modeling with LSTM or Transformer-based architectures, transfer learning and domain adaptation strategies
+
+
+
+
+
